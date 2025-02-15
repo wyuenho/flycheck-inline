@@ -232,7 +232,8 @@ ERRORS is a list of `flycheck-error' objects."
   (let* ((lines (mapcar 'flycheck-error-line errors))
          (line-range (cons (apply 'min lines) (apply 'max lines)))
          (columns (mapcar 'flycheck-error-column errors))
-         (column-range (cons (apply 'min columns) (apply 'max columns))))
+         (column-range (and (not (seq-some 'null columns))
+                            (cons (apply 'min columns) (apply 'max columns)))))
     (mapc #'flycheck-inline-display-error
           (seq-filter
            (lambda (error)
@@ -241,8 +242,11 @@ ERRORS is a list of `flycheck-error' objects."
                (and
                 (>= line (car line-range))
                 (<= line (cdr line-range))
-                (>= column (car column-range))
-                (<= column (cdr column-range)))))
+                (if (and column-range column)
+                    (and
+                     (>= column (car column-range))
+                     (<= column (cdr column-range)))
+                  t))))
            (seq-uniq
             (seq-mapcat #'flycheck-related-errors errors))))))
 
